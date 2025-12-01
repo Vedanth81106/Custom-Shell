@@ -1,0 +1,224 @@
+package org.waffles.commands;
+
+import com.google.gson.Gson;
+import org.waffles.ai.AiModels;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Arrays;
+import java.util.Properties;
+
+public class AiCommand implements Command{
+
+    private final Gson gson = new Gson();
+    private final HttpClient client = HttpClient.newHttpClient();
+    private String currentModel = "auto";
+
+    @Override
+    public void execute(String... args) throws IOException {
+
+        if(args.length < 2){
+            System.out.println("Incorrect command. Did you mean:\n ai <prompt>" +
+                    "\nai --default\nai --gemini\nai--ollama");
+            return;
+        }
+
+        String firstArg = args[1];
+        firstArg = firstArg.trim().toLowerCase();
+
+        switch (firstArg){
+
+            case "--debug":
+                listAvailableModels();
+                return;
+
+            case "--help":
+                System.out.println("\n--- AI COMMAND USAGE ---");
+                System.out.println("1. Chat (Auto-Failover):");
+                System.out.println("   ai <your prompt>");
+                System.out.println("\n2. Force a specific Model (One-time):");
+                System.out.println("   ai --gemini <prompt>");
+                System.out.println("   ai --ollama <prompt>");
+                System.out.println("\n3. Change Default Model:");
+                System.out.println("   ai --default gemini");
+                System.out.println("   ai --default ollama");
+                System.out.println("   ai --default auto");
+                return;
+
+            case "--gemini":
+                if(args.length < 3) return;
+                String geminiPrompt = String.join(" ", Arrays.copyOfRange(args,2,args.length));
+                standardChat("gemini", geminiPrompt);
+                return;
+
+            case "--ollama":
+                if(args.length < 3) return;
+                String ollamaPrompt = String.join(" ", Arrays.copyOfRange(args,2,args.length));
+                standardChat("ollama",ollamaPrompt);
+                return;
+
+            case "--default":
+                if(args.length < 3){
+                    System.out.println("Usage: ai --default [gemini/ollama/auto]");
+                    return;
+                }
+
+                if(args[2].isEmpty()){
+                    System.out.println("Incorrect command. Usage: ai --default gemini OR ai --default ollama");
+                }
+
+                String model = args[2].trim().toLowerCase();
+                if(!model.equals("gemini") && !model.equals("ollama") && !model.equals("auto")) {
+                    System.out.println("Invalid model. Choose: gemini, ollama, auto");
+                    return;
+                }
+
+                currentModel = model;
+                System.out.println("Default AI set to " + model);
+                return;
+
+            default:
+                //if it starts with -- but not valid command
+                if(firstArg.startsWith("--")) {
+                    System.out.println("Unknown flag: " + firstArg);
+                    System.out.println("Try 'ai --help' to see valid options.");
+                    return;
+                }
+                break;
+        }
+
+        String prompt = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+
+        standardChat(currentModel,prompt);
+    }
+
+    private void standardChat(String model, String prompt){
+
+        model = model.trim().toLowerCase();
+
+        if("gemini".equals(model)){
+
+            try{
+                chatWithGemini(prompt);
+            }catch (Exception e){
+                System.out.println("Chat with Gemini failed. " + e.getMessage());
+                return;
+            }
+        }else if("ollama".equals(model)){
+
+            try{
+                chatWithOllama(prompt);
+            }catch(Exception e){
+                System.out.println("Chat with Ollama failed. " + e.getMessage());
+                return;
+            }
+        }else if("auto".equals(model)){
+
+            try{
+                chatWithOllama(prompt);
+            }catch(Exception e){
+                System.out.println("Local AI failed." + e.getMessage() + " Switching to Cloud (Gemini)...");
+                try {
+                    chatWithGemini(prompt);
+                } catch (Exception cloudError) {
+                    System.out.println("Error: Both AIs failed. " + cloudError.getMessage());
+                }
+            }
+        }
+    }
+
+    private void chatWithOllama(String prompt) throws IOException, InterruptedException {
+
+        AiModels.OllamaRequest ollamaRequest = new AiModels.OllamaRequest("tinyllama",prompt);
+        String jsonBody = gson.toJson(ollamaRequest);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:11434/api/generate"))
+                .header("CONTENT-TYPE","application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        HttpResponse<String> response = client.send(request,HttpResponse.BodyHandlers.ofString());
+
+        if(response.statusCode() != 200){
+            throw new IOException("Ollama error: " + response.statusCode());
+        }
+
+        AiModels.OllamaResponse responseObj = gson.fromJson(response.body(),AiModels.OllamaResponse.class);
+
+        if (responseObj == null || responseObj.response == null || responseObj.response.isEmpty()) {
+            throw new IOException("Gemini returned empty or invalid response. Raw body: " + response.body());
+        }
+
+        System.out.println("[Ollama]: " + responseObj.response  );
+
+    }
+    private void listAvailableModels() throws IOException {
+        Properties props = new Properties();
+        try (FileInputStream fis = new FileInputStream("config.properties")) {
+            props.load(fis);
+        } catch (IOException e) {
+            throw new IOException("Could not find config.properties file!");
+        }
+        String key = props.getProperty("gemini_key");
+        String url = "https://generativelanguage.googleapis.com/v1beta/models?key=" + key;
+
+        System.out.println("Querying Google for available models...");
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("--- GOOGLE RESPONSE ---");
+            System.out.println(response.body());
+            System.out.println("-----------------------");
+
+        } catch (Exception e) {
+            System.out.println("Debug failed: " + e.getMessage());
+        }
+    }
+
+    private void chatWithGemini(String prompt) throws IOException, InterruptedException {
+
+        Properties props = new Properties();
+        try (FileInputStream fis = new FileInputStream("config.properties")) {
+            props.load(fis);
+        } catch (IOException e) {
+            throw new IOException("Could not find config.properties file!");
+        }
+
+        String key = props.getProperty("gemini_key");
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=" + key;
+
+        AiModels.GeminiRequest geminiRequest = new AiModels.GeminiRequest(prompt);
+        String jsonBody = gson.toJson(geminiRequest);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("CONTENT-TYPE","application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        HttpResponse<String> response = client.send(request,HttpResponse.BodyHandlers.ofString());
+
+        if(response.statusCode() != 200){
+            System.out.println("Gemini error: " + response.body());
+            throw new IOException("Gemini error: " + response.statusCode());
+        }
+
+        AiModels.GeminiResponse responseObj = gson.fromJson(response.body(),AiModels.GeminiResponse.class);
+
+        if (responseObj == null || responseObj.candidates == null || responseObj.candidates.isEmpty()) {
+            throw new IOException("Gemini returned empty or invalid response. Raw body: " + response.body());
+        }
+
+        System.out.println("[Gemini]: " + responseObj.getAnswer());
+    }
+}
