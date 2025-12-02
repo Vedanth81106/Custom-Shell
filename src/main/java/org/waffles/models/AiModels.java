@@ -1,4 +1,4 @@
-package org.waffles.ai;
+package org.waffles.models;
 
 import java.util.Collections;
 import java.util.List;

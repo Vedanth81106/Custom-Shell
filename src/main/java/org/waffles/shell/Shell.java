@@ -1,9 +1,7 @@
 package org.waffles.shell;
 
-import org.waffles.commands.AiCommand;
-import org.waffles.commands.Command;
-import org.waffles.commands.HelpCommand;
-import org.waffles.commands.MathCommand;
+import org.waffles.Colors;
+import org.waffles.commands.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,7 +9,7 @@ import java.util.Scanner;
 
 public class Shell {
 
-    private final Map<String, Command> cmds = new HashMap<>();
+    public static final Map<String, Command> cmds = new HashMap<>();
     private final Scanner scan = new Scanner(System.in);
     public boolean isRunning = true;
 
@@ -26,14 +24,16 @@ public class Shell {
         cmds.put("math",new MathCommand());
         cmds.put("ai",new AiCommand());
         cmds.put("help",new HelpCommand());
+        cmds.put("leetcode", new LeetCodeCommand());
+        cmds.put("do", new DoCommand());
     }
 
     public void start(){
 
-        System.out.println("Custom shell initialized");
+        System.out.println(Colors.CYAN_BOLD + "Custom Shell Initialized" + Colors.RESET);
 
         while(isRunning){
-            System.out.print("cShell>");
+            System.out.print(Colors.CYAN_BOLD + "cShell> " + Colors.RESET);
 
             String input = scan.nextLine().trim();
 
@@ -48,11 +48,10 @@ public class Shell {
                 try{
                     cmd.execute(parts);
                 } catch (Exception e) {
-                    System.out.println("Error executing command: " + e.getMessage());
+                    System.out.println(Colors.RED + "Error executing command: " + e.getMessage() + Colors.RESET);
                 }
             }else{
-                System.out.println("Unknown command: " + cmdName);
-            }
+                System.out.println(Colors.YELLOW + "Unknown command: " + cmdName + Colors.RESET);            }
         }
 
         System.out.println("Exiting shell...");

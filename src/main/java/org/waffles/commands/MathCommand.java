@@ -1,13 +1,15 @@
 package org.waffles.commands;
 
+import org.waffles.Colors;
+
 public class MathCommand implements Command {
 
     @Override
     public void execute(String... args) {
 
         if (args.length < 4) {
-            System.out.println("Usage: math [num1] [operator] [num2]");
-            System.out.println("Example: math 5 + 5");
+            System.out.println(Colors.RED + "Usage: math [num1] [operator] [num2]" + Colors.RESET);
+            System.out.println(Colors.RED + "Example: math 5 + 5" + Colors.RESET);
             return;
         }
 
@@ -30,20 +32,20 @@ public class MathCommand implements Command {
                     break;
                 case "/":
                     if (num2 == 0) {
-                        System.out.println("Error: Cannot divide by zero.");
+                        System.out.println(Colors.RED + "Error: Cannot divide by zero." + Colors.RESET);
                         return;
                     }
                     result = num1 / num2;
                     break;
                 default:
-                    System.out.println("Invalid operator. Use +, -, *, /");
+                    System.out.println(Colors.RED + "Invalid operator. Use +, -, *, /" + Colors.RESET);
                     return;
             }
 
             System.out.println("Result: " + result);
 
         } catch (NumberFormatException e) {
-            System.out.println("Error: Please provide valid numbers.");
+            System.out.println(Colors.RED + "Error: Please provide valid numbers." + Colors.RESET);
         }
     }
 }

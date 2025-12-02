@@ -28,7 +28,7 @@ public class ShellUtils {
 
         String[] cmd = {"cmd.exe","/c","start",app + ":"};
         cmdStarter(cmd);
-        System.out.println("Starting " + app + "...");
+        System.out.println("Opening " + app + "...");
     }
 
     public static void googleCmd(String[] query) throws IOException{
@@ -51,7 +51,7 @@ public class ShellUtils {
             cmd = new String[]{"cmd.exe", "/c", "start", "spotify:search:" + queryBuilder(1, query)};
         }
         cmdStarter(cmd);
-        System.out.println("Starting spotify...");
+        System.out.println("Opening spotify...");
     }
 
     public static void ytCmd(String[] query) throws IOException {
@@ -63,7 +63,7 @@ public class ShellUtils {
             cmd = new String[]{"cmd.exe", "/c", "start", "https://www.youtube.com/results?search_query=" + queryBuilder(1, query)};
         }
         cmdStarter(cmd);
-        System.out.println("Starting youtube...");
+        System.out.println("Opening youtube...");
     }
 
 }
