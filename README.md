@@ -2,7 +2,7 @@
 
 A modular, AI-powered command-line interface built in Java. It features a hybrid AI engine (Cloud + Local), developer tools, and a Natural Language Action Interpreter.
 
-## 🚀 Key Features
+##  Key Features
 
 * ** Natural Language Action Engine:** Type requests in plain English (`do open spotify and play drake`), and the shell translates them into executable system commands.
 * ** Hybrid AI Chat:**
