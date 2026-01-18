@@ -32,7 +32,7 @@ A modular, AI-powered command-line interface built in Java. It features a hybrid
 ### For Developers (Building from Source)
 1.  **Clone the repo:**
     ```bash
-    git clone [https://github.com/YOUR_USERNAME/waffle-shell.git](https://github.com/YOUR_USERNAME/waffle-shell.git)
+    git clone https://github.com/Vedanth81106/Custom-Shell.git
     ```
 2.  **Build the Project:**
     ```bash
