@@ -34,6 +34,12 @@ A modular, AI-powered command-line interface built in Java. It features a hybrid
     ```bash
     git clone https://github.com/Vedanth81106/Custom-Shell.git
     ```
+
+2.  **cd into directory**
+    ```bash
+    cd Custom-Shell
+    ```
+    
 2.  **Build the Project:**
     ```bash
     mvn package
