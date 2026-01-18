@@ -46,7 +46,7 @@ A modular, AI-powered command-line interface built in Java. It features a hybrid
     ```
 3.  **Run:**
     ```bash
-    java -jar target/custom-shell-1.0-SNAPSHOT.jar
+    java -jar target/CustomShell-1.0-SNAPSHOT.jar
     ```
 
 ### For Users (Running the App)
